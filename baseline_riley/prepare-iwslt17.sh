@@ -5,6 +5,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+set -e
+
+source ../venv/bin/activate
+
 SRCS=(
     "de"
 )
@@ -30,35 +34,11 @@ ARCHIVES=(
     "de-en.tgz"
 )
 VALID_SETS=(
-    "IWSLT17.TED.dev2010.de-en IWSLT17.TED.tst2010.de-en IWSLT17.TED.tst2011.de-en IWSLT17.TED.tst2012.de-en IWSLT17.TED.tst2013.de-en IWSLT17.TED.tst2014.de-en IWSLT17.TED.tst2015.de-en"
+    "IWSLT17.TED.dev2010.de-en"
 )
-
-#gdown "https://drive.google.com/uc?id=12ycYSzLIG253AFN35Y6qoyf9wtkOjakp"
-#mv 
-
-
-# download and extract data
-#for ((i=0;i<${#URLS[@]};++i)); do
-#    ARCHIVE=$ORIG/${ARCHIVES[i]}
-#    if [ -f "$ARCHIVE" ]; then
-#        echo "$ARCHIVE already exists, skipping download"
-#    else
-#        URL=${URLS[i]}
-#        wget -P "$ORIG" "$URL"
-#        if [ -f "$ARCHIVE" ]; then
-#            echo "$URL successfully downloaded."
-#        else
-#            echo "$URL not successfully downloaded."
-#            exit 1
-#        fi
-#    fi
-#    FILE=${ARCHIVE: -4}
-#    if [ -e "$FILE" ]; then
-#        echo "$FILE already exists, skipping extraction"
-#    else
-#        tar -C "$ORIG" -xzvf "$ARCHIVE"
-#    fi
-#done
+TEST_SETS=(
+    "IWSLT17.TED.tst2010.de-en IWSLT17.TED.tst2011.de-en IWSLT17.TED.tst2012.de-en IWSLT17.TED.tst2013.de-en IWSLT17.TED.tst2014.de-en IWSLT17.TED.tst2015.de-en"
+)
 
 echo "pre-processing train data..."
 for SRC in "${SRCS[@]}"; do
@@ -82,6 +62,9 @@ for SRC in "${SRCS[@]}"; do
     done
 done
 
+echo "removing partial copies from train data..."
+python filter.py
+
 echo "pre-processing valid data..."
 for ((i=0;i<${#SRCS[@]};++i)); do
     SRC=${SRCS[i]}
@@ -93,10 +76,28 @@ for ((i=0;i<${#SRCS[@]};++i)); do
                 | sed -e 's/<seg id="[0-9]*">\s*//g' \
                 | sed -e 's/\s*<\/seg>\s*//g' \
                 | sed -e "s/\’/\'/g" \
-                > "$DATA/valid${j}.${SRC}-${TGT}.${LANG}"
+                > "$DATA/valid.${SRC}-${TGT}.${LANG}"
         done
     done
 done
+
+
+echo "pre-processing test data..."
+for ((i=0;i<${#SRCS[@]};++i)); do
+    SRC=${SRCS[i]}
+    VALID_SET=(${TEST_SETS[i]})
+    for ((j=0;j<${#VALID_SET[@]};++j)); do
+        FILE=${VALID_SET[j]}
+        for LANG in "$SRC" "$TGT"; do
+            grep '<seg id' "$ORIG/${SRC}-${TGT}/${FILE}.${LANG}.xml" \
+                | sed -e 's/<seg id="[0-9]*">\s*//g' \
+                | sed -e 's/\s*<\/seg>\s*//g' \
+                | sed -e "s/\’/\'/g" \
+                >> "$DATA/test.${SRC}-${TGT}.${LANG}"
+        done
+    done
+done
+
 
 # learn BPE with sentencepiece
 TRAIN_FILES=$(for SRC in "${SRCS[@]}"; do echo $DATA/train.${SRC}-${TGT}.${SRC}; echo $DATA/train.${SRC}-${TGT}.${TGT}; done | tr "\n" ",")
@@ -120,14 +121,18 @@ for SRC in "${SRCS[@]}"; do
 done
 
 echo "encoding valid with learned BPE..."
-for ((i=0;i<${#SRCS[@]};++i)); do
-    SRC=${SRCS[i]}
-    VALID_SET=(${VALID_SETS[i]})
-    for ((j=0;j<${#VALID_SET[@]};++j)); do
-        python "$SPM_ENCODE" \
-            --model "$DATA/sentencepiece.bpe.model" \
-            --output_format=piece \
-            --inputs $DATA/valid${j}.${SRC}-${TGT}.${SRC} $DATA/valid${j}.${SRC}-${TGT}.${TGT} \
-            --outputs $DATA/valid${j}.bpe.${SRC}-${TGT}.${SRC} $DATA/valid${j}.bpe.${SRC}-${TGT}.${TGT}
-    done
-done
+SRC=de
+python "$SPM_ENCODE" \
+    --model "$DATA/sentencepiece.bpe.model" \
+    --output_format=piece \
+    --inputs $DATA/valid.${SRC}-${TGT}.${SRC} $DATA/valid.${SRC}-${TGT}.${TGT} \
+    --outputs $DATA/valid.bpe.${SRC}-${TGT}.${SRC} $DATA/valid.bpe.${SRC}-${TGT}.${TGT}
+
+echo "encoding test with learned BPE..."
+SRC=de
+python "$SPM_ENCODE" \
+    --model "$DATA/sentencepiece.bpe.model" \
+    --output_format=piece \
+    --inputs $DATA/test.${SRC}-${TGT}.${SRC} $DATA/test.${SRC}-${TGT}.${TGT} \
+    --outputs $DATA/test.bpe.${SRC}-${TGT}.${SRC} $DATA/test.bpe.${SRC}-${TGT}.${TGT}
+
