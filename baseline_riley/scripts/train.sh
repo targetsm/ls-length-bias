@@ -1,17 +1,18 @@
 #!/bin/sh
 
-ROOT=/cluster/home/ggabriel/ls-length-bias/baseline_riley/
+ROOT=/cluster/home/ggabriel/ls-length-bias/baseline_riley/s_100
 DATA_DIR=$ROOT/iwslt17.de-en.bpe16k
 
 echo "Binarize Dataset"
 fairseq-preprocess --source-lang de --target-lang en \
     --trainpref $DATA_DIR/train.bpe.de-en \
-    --validpref $DATA_DIR/valid0.bpe.de-en,$DATA_DIR/valid1.bpe.de-en,$DATA_DIR/valid2.bpe.de-en,$DATA_DIR/valid3.bpe.de-en,$DATA_DIR/valid4.bpe.de-en,$DATA_DIR/valid5.bpe.de-en \
-    --destdir data-bin/iwslt17.de-en.bpe16k \
+    --validpref $DATA_DIR/valid.bpe.de-en \
+    --testpref $DATA_DIR/test.bpe.de-en \
+    --destdir $ROOT/data-bin/iwslt17.de-en.bpe16k \
     --workers 10
 
 echo "Starting Training..."
-CUDA_VISIBLE_DEVICES=0 fairseq-train data-bin/iwslt17.de-en.bpe16k/     \
+CUDA_VISIBLE_DEVICES=0 fairseq-train $ROOT/data-bin/iwslt17.de-en.bpe16k/     \
 	--encoder-embed-dim 512 --encoder-ffn-embed-dim 2048 --encoder-layers 6 --encoder-attention-heads 4 \
 	--decoder-embed-dim 512 --decoder-ffn-embed-dim 2048 --decoder-layers 6 --decoder-attention-heads 4 \
 	--max-epoch 100 --ddp-backend=legacy_ddp  --task translation  \
@@ -21,7 +22,7 @@ CUDA_VISIBLE_DEVICES=0 fairseq-train data-bin/iwslt17.de-en.bpe16k/     \
 	--warmup-updates 8000 --warmup-init-lr '1e-07' --label-smoothing 0.1 \
 	--criterion label_smoothed_cross_entropy  --dropout 0.3 --attention-dropout 0.3 --activation-dropout 0.3 \
 	--weight-decay 0.0001 \
-	--save-dir checkpoints/transformer --max-tokens 4096 --eval-bleu \
+	--save-dir $ROOT/checkpoints/transformer --max-tokens 4096 --eval-bleu \
 	--eval-bleu-detok moses --eval-bleu-remove-bpe --eval-bleu-print-samples \
 	--best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
 	--ignore-unused-valid-subsets --no-epoch-checkpoints --patience 20
