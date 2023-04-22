@@ -19,11 +19,11 @@ for i in range(len(src)):
     if overlap < len(src_tok)/2:
         new_src.append(src[i])
         new_trg.append(trg[i])
-    else:
-        print(src[i], trg[i])
+    #else:
+        #print(src[i], trg[i])
 
-print(f'Removed {len(new_src)} partial copies from src')
-print(f'Removed {len(new_trg)} partial copies from trg')
+print(f'Removed {len(src) - len(new_src)} partial copies from src')
+print(f'Removed {len(trg) - len(new_trg)} partial copies from trg')
 
 
 with open("iwslt17.de-en.bpe16k/train.de-en.de", 'w') as out_src:

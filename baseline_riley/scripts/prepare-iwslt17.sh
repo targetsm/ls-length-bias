@@ -7,7 +7,7 @@
 
 set -e
 
-source ../venv/bin/activate
+source ../../venv/bin/activate
 
 SRCS=(
     "de"
@@ -15,7 +15,7 @@ SRCS=(
 TGT=en
 
 ROOT=$(dirname "$0")
-SCRIPTS=../fairseq/scripts
+SCRIPTS=../../fairseq/scripts
 SPM_TRAIN=$SCRIPTS/spm_train.py
 SPM_ENCODE=$SCRIPTS/spm_encode.py
 
@@ -24,8 +24,10 @@ ORIG=$ROOT/iwslt17_orig
 DATA=$ROOT/iwslt17.de-en.bpe16k
 mkdir -p "$ORIG" "$DATA"
 
-TRAIN_MINLEN=1  # remove sentences with <1 BPE token
+TRAIN_MINLEN=0  # remove sentences with <1 BPE token
 TRAIN_MAXLEN=250  # remove sentences with >250 BPE tokens
+
+TRUNC=0.5 # Truncation ratio
 
 URLS=(
     "https://wit3.fbk.eu/archive/2017-01-trnted/texts/de/en/de-en.tgz"
@@ -81,7 +83,7 @@ for ((i=0;i<${#SRCS[@]};++i)); do
     done
 done
 
-
+rm -f $DATA/test.*
 echo "pre-processing test data..."
 for ((i=0;i<${#SRCS[@]};++i)); do
     SRC=${SRCS[i]}
@@ -108,6 +110,10 @@ python "$SPM_TRAIN" \
     --vocab_size=$BPESIZE \
     --character_coverage=1.0 \
     --model_type=bpe
+
+python truncate.py $DATA/train.de-en.de $TRUNC
+python truncate.py $DATA/valid.de-en.de $TRUNC
+python truncate.py $DATA/test.de-en.de $TRUNC
 
 # encode train/valid
 echo "encoding train with learned BPE..."

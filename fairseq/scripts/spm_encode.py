@@ -93,7 +93,7 @@ def main():
 
         def encode_line(line):
             line = line.strip()
-            if len(line) > 0:
+            if len(line) > 0 or True:
                 line = encode(line)
                 if valid(line):
                     return line

@@ -19,10 +19,10 @@ CUDA_VISIBLE_DEVICES=0 fairseq-train $ROOT/data-bin/iwslt17.de-en.bpe16k/     \
 	--arch transformer_iwslt_de_en --share-decoder-input-output-embed  \
 	--optimizer adam --adam-betas '(0.9, 0.999)' --adam-eps '1e-8' \
 	--clip-norm 1.0  --lr '3e-4' --lr-scheduler inverse_sqrt \
-	--warmup-updates 8000 --warmup-init-lr '1e-07' --label-smoothing 0.1 \
-	--criterion label_smoothed_cross_entropy  --dropout 0.3 --attention-dropout 0.3 --activation-dropout 0.3 \
+	--warmup-updates 8000 --warmup-init-lr '1e-07' \
+	--criterion cross_entropy  --dropout 0.3 --attention-dropout 0.3 --activation-dropout 0.3 \
 	--weight-decay 0.0001 \
-	--save-dir $ROOT/checkpoints/transformer --max-tokens 4096 --eval-bleu \
+	--save-dir $ROOT/checkpoints/transformer_nols --max-tokens 4096 --eval-bleu \
 	--eval-bleu-detok moses --eval-bleu-remove-bpe --eval-bleu-print-samples \
 	--best-checkpoint-metric bleu --maximize-best-checkpoint-metric \
 	--ignore-unused-valid-subsets --no-epoch-checkpoints --patience 20 \
