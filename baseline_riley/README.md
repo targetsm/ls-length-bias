@@ -4,7 +4,7 @@ How to run the experiment (on Euler):
 
 ```
 bash prepare-iwslt17.sh
-sbatch -o train.log --gpus=1 --mem-per-cpu=8000 train.sh
+sbatch -o train.log --gpus=1 --mem-per-cpu=8000 --time=12:00:00 train.sh
 ```
 
 Replication of the training setup of [Riley and Chiang, 2022](https://arxiv.org/abs/2210.10817).
