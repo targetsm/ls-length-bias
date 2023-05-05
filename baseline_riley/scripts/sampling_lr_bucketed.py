@@ -4,10 +4,11 @@ import numpy as np
 
 data_ls = []
 data_nols = []
-labels = ['100']
+source_lengths = ['100']
 error_ls = []
 error_nols = []
-for s in labels:
+labels = []
+for s in source_lengths:
     for var in ['nols', 'ls']:
         f_nobpe = f'/cluster/home/ggabriel/ls-length-bias/baseline_riley/s_{s}/evaluation/sampling/{var}/generate_test_processed_nobpe.txt'
         f_bpe = f'/cluster/home/ggabriel/ls-length-bias/baseline_riley/s_{s}/evaluation/sampling/{var}/generate_test_processed_bpe.txt'
@@ -89,16 +90,19 @@ for s in labels:
                     error_ls.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(1e+1))
 
 import matplotlib.pyplot as plt
-x=labels
+x=np.arange(len(labels))
 width = 10
 height = 8
 plt.figure(figsize=(width, height))
-#plt.bar(x, data_nols, label='nols')
-plt.bar(x, data_ls, label='ls')
+ax = plt.subplot(111)
+ax.bar(x-0.1, data_nols, width=0.2, color='b', align='center', label='nols')
+ax.bar(x+0.1, data_ls, width=0.2, color='r', align='center', label='ls')
+plt.xticks(x, labels)
 plt.grid(axis='y')
 plt.ylabel('Length ratio')
 plt.xlabel('Buckets')
 plt.title('Scaled standard error over length buckets (s_100)')
-plt.errorbar(x, data_nols, error_nols, marker='o', capsize=4, color='black', ls='none')
-plt.errorbar(x, data_ls, error_ls, marker='o', capsize=4, color='black', ls='none')
+plt.legend(loc='upper right')
+plt.errorbar(x-0.1, data_nols, error_nols, marker='o', capsize=4, color='black', ls='none')
+plt.errorbar(x+0.1, data_ls, error_ls, marker='o', capsize=4, color='black', ls='none')
 plt.savefig('buckets.png', dpi=400)
