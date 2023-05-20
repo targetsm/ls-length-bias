@@ -85,9 +85,9 @@ for s in source_lengths:
                 print('lr_se:', math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])) 
                 #error.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(1e+1))
                 if var == 'nols':
-                    error_nols.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(1e+1))
+                    error_nols.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(2.58))
                 else:
-                    error_ls.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(1e+1))
+                    error_ls.append(math.sqrt(buckets_std[i][2]/buckets_std[i][3])/math.sqrt(buckets_std[i][3])*(2.58))
 
 import matplotlib.pyplot as plt
 x=np.arange(len(labels))
@@ -101,8 +101,8 @@ plt.xticks(x, labels)
 plt.grid(axis='y')
 plt.ylabel('Length ratio')
 plt.xlabel('Buckets')
-plt.title('Scaled standard error over length buckets (s_100)')
+plt.title('Bucket length ratios s_100')
 plt.legend(loc='upper right')
 plt.errorbar(x-0.1, data_nols, error_nols, marker='o', capsize=4, color='black', ls='none')
 plt.errorbar(x+0.1, data_ls, error_ls, marker='o', capsize=4, color='black', ls='none')
-plt.savefig('buckets.png', dpi=400)
+plt.savefig('sampling_lr_bucketed.png', dpi=400)
