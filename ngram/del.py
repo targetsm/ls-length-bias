@@ -30,18 +30,14 @@ class TrieNode(object):
         global total_counter
         total_counter += 1
 
-    def normalize_leaves(self, smooth_alpha=-np.inf):
-        print(self.word, self.children.keys()) 
+    def normalize_leaves(self, smooth_alpha=-np.inf, eps=0):
         self.outcomes = list(self.children.keys())
         global normalize_count
         normalize_count += len(self.outcomes)
         counts = np.array([(lambda x: self.children[i].counter if i in self.outcomes else 0)(i) for i in range(self.max_idx)])
-        print(counts)
-        unnorm_log_distribution = np.log(counts) # we have to remove smooth alpha from the ones that are not 0 right?
-        print(unnorm_log_distribution)
-        unnorm_log_distribution[unnorm_log_distribution == -np.inf] = smooth_alpha # either add it to all or do the 1-e thing
-        self.log_distribution = lognormalize(unnorm_log_distribution)
-        print(self.log_distribution)
+        unnorm_log_distribution = np.log(counts) 
+        unnorm_log_distribution[unnorm_log_distribution == -np.inf] = smooth_alpha 
+        self.log_distribution = np.log((1-eps) * np.exp(lognormalize(unnorm_log_distribution)) + eps * (1/self.max_idx))
 
 def lognormalize(x: np.array) -> np.array:
     a = np.logaddexp.reduce(x)
@@ -85,24 +81,23 @@ def find_prefix(root: TrieNode, prefix: List[str], token_to_id_map: Dict[str, in
         try:
             node = node.children[token_to_id_map[word]]
         except KeyError:
-            return None, None
+            return None, ([np.log(1/root.max_idx)] * root.max_idx)
     
     return node.outcomes, node.log_distribution
 
 
-def normalize(root: TrieNode, smooth_alpha=-np.inf):
-    print('root')
+def normalize(root: TrieNode, smooth_alpha=-np.inf, eps=0):
+    #print('root')
     global normalize_count
     global total_counter
     for word, child in root.children.items():
-        print(word, child)
         normalize_count += 1
-        print(normalize_count, total_counter)
+        #print(normalize_count, total_counter)
 
         if child.children[next(iter(child.children))].is_leaf:
-            child.normalize_leaves(smooth_alpha)
+            child.normalize_leaves(smooth_alpha, eps)
         else:
-            normalize(child, smooth_alpha)
+            normalize(child, smooth_alpha, eps)
 
 
 def sample(root: TrieNode, orig_prefix: List[str], token_to_id_map: Dict[str, int]) -> str:
@@ -110,21 +105,29 @@ def sample(root: TrieNode, orig_prefix: List[str], token_to_id_map: Dict[str, in
     sentence = []
     prefix = orig_prefix
     cur_word = prefix[-1]
-
+    eos_probs = []
     while cur_word != "</s>":
+        #print(cur_word)
+        #print(token_to_id_map[cur_word])
         outcomes, log_probs = find_prefix(root, prefix, token_to_id_map)
-        if not outcomes:
-            prefix = orig_prefix
-            cur_word = prefix[-1]
-            sentence = []
-
-        sampled_idx = log_multinomial_sample(log_probs)
+        #if not outcomes:
+        #    print(prefix, cur_word)
+        #print(outcomes, log_probs, cur_word)
+        #if not outcomes:
+        #    prefix = orig_prefix
+        #    cur_word = prefix[-1]
+        #    sentence = []
+        #    eos_probs = []
+        #    continue #hmmmm very unsure this is correct, shouldn't we just return uniform porbabilities?
+        log_probs_smoothed = np.log((1-eps) * np.exp(log_probs) + eps * (1/root.max_idx))
+        eos_probs.append(log_probs_smoothed[token_to_id_map["</s>"]])
+        sampled_idx = log_multinomial_sample(log_probs_smoothed)
         cur_word = id_to_token_map[sampled_idx]
         sentence.append(cur_word)
         prefix = prefix[1:] + [cur_word]
 
-    # print(sentence)
-    return sentence
+        #print(' '.join(sentence))
+    return sentence, eos_probs
 
 
 def log_multinomial_sample(x: np.array) -> int:
@@ -132,7 +135,7 @@ def log_multinomial_sample(x: np.array) -> int:
     x: log-probability distribution (unnormalized is ok) over discrete random variable
     returns the (index of) the sampled word
     """
-    print(x)
+    #print(x)
     c = np.logaddexp.accumulate(x) 
     key = np.log(np.random.uniform())+c[-1]
     return bisect(c, key)
@@ -144,25 +147,21 @@ def get_ngrams(sentence: str, n: int=5) -> List[List[str]]:
     return [words[i:i+n] for i in range(len(words)-n+1)] 
 
 
-def create_model(sentences: List[str], n: int, dictionary: List[str], token_to_idx_map: Dict[str, int], smooth_alpha=-np.inf) -> TrieNode:
+def create_model(sentences: List[str], n: int, dictionary: List[str], token_to_idx_map: Dict[str, int], smooth_alpha=-np.inf, eps=0) -> TrieNode:
     words = set()
 
     for l in dictionary:
         words.add(token_to_idx_map[l.split()[0]])
-
     root = TrieNode(len(dictionary), len(dictionary))
     i=0
     for s in sentences:
         ngrams = get_ngrams(s.strip(), n)
         i+=1
-        print(i)
-        print(s)
-        print(ngrams)
         for ngram in ngrams:
             if all(token_to_idx_map.get(w, 3) in words for w in ngram):
                 add(root, ngram, token_to_idx_map)
 
-    normalize(root, smooth_alpha)
+    normalize(root, smooth_alpha, eps)
     return root
 
 
@@ -208,33 +207,47 @@ def add_special_tokens_to_vocabulary(vocab: List[str]) -> List[str]:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--task', choices=['generate', 'sample'])
+    parser.add_argument('-n', '--ngrams', type=int, default=3, help="Number of ngrams")
     parser.add_argument('--data_path', type=str, help="Path to file containing processed data. One sample per line")
     parser.add_argument('--dict_path', type=str, help="Path to dict.txt from fairseq-preprocess")
     parser.add_argument('--output_path', type=str, help="Where to store the sampled sentences")
     parser.add_argument('--model_path', type=str, help="Path to new/existing ngram")
     parser.add_argument('--smooth_alpha', type=float, default=-1.0, help="Degree of smoothing, -1 will be converted to -np.inf for a sparse model")
+    parser.add_argument('--ls_eps', type=float, default=0.0, help="Factor of label smoothing")
+
     total_counter = 0
     normalize_count = 0
     args = parser.parse_args()
     sentences = parse_dataset(args.data_path)    
     dictionary = parse_fairseq_vocabulary(args.dict_path)
 
-    n = 5
+    n = args.ngrams
     smooth_alpha = args.smooth_alpha
     if args.smooth_alpha == -1.0:
         smooth_alpha = -np.inf
     print(f"SMOOTHNESS: {smooth_alpha}")
+    
+    eps = args.ls_eps
+    print(f"LS_EPS: {eps}")
 
     dictionary = add_special_tokens_to_vocabulary(dictionary)
     token_to_idx, _ = get_vocabulary_idx_maps(dictionary)
-        
+      
     if args.task == 'generate':
-        root = create_model(sentences, n, dictionary, token_to_idx_map=token_to_idx, smooth_alpha=smooth_alpha)
+        root = create_model(sentences, n, dictionary, token_to_idx_map=token_to_idx, smooth_alpha=smooth_alpha, eps=eps)
         print("CREATED MODEL")
         pickle.dump(root, open(args.model_path, "wb"))
+        pickle.dump(token_to_idx, open(args.model_path + '.vocab', 'wb'))
     elif args.task == 'sample':
         root = pickle.load(open(args.model_path, "rb"))
+        #token_to_idx = pickle.load(open(args.model_path + '.vocab', 'rb'))
+        #eos_file = open(args.output_path + '.eos_count', 'wb')
+        #eos_list = []
         with open(args.output_path, 'w') as f:
-            for i in range(len(sentences)):
-                sampled = sample(root, ['<s>']*(n-1), token_to_idx)
+            for i in range(1000):
+                sampled, eos_probs = sample(root, ['<s>']*(n-1), token_to_idx)
+                #eos_list.append(eos_probs)
                 f.write(' '.join(sampled[:-1])+'\n')
+
+        #import pickle
+        #pickle.dump(eos_list, eos_file)
