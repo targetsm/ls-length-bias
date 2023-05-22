@@ -10,8 +10,6 @@ from tqdm import tqdm
 import pdb
 import glob
 
-total_counter = 0
-normalize_count = 0
 class TrieNode(object):
     def __init__(self, word: int, max_idx: int):
         # index of the node word
@@ -27,17 +25,13 @@ class TrieNode(object):
         self.outcomes = None
         # normalized next word log-distribution
         self.log_distribution = None
-        global total_counter
-        total_counter += 1
 
-    def normalize_leaves(self, smooth_alpha=-np.inf, eps=0):
+    def normalize_leaves(self, smooth_alpha=-np.inf):
         self.outcomes = list(self.children.keys())
-        global normalize_count
-        normalize_count += len(self.outcomes)
         counts = np.array([(lambda x: self.children[i].counter if i in self.outcomes else 0)(i) for i in range(self.max_idx)])
-        unnorm_log_distribution = np.log(counts) 
-        unnorm_log_distribution[unnorm_log_distribution == -np.inf] = smooth_alpha 
-        self.log_distribution = np.log((1-eps) * np.exp(lognormalize(unnorm_log_distribution)) + eps * (1/self.max_idx))
+        unnorm_log_distribution = np.log(counts)# + smooth_alpha) 
+        #unnorm_log_distribution[unnorm_log_distribution == -np.inf] = np.log(smooth_alpha)
+        self.log_distribution = lognormalize(unnorm_log_distribution)
 
 def lognormalize(x: np.array) -> np.array:
     a = np.logaddexp.reduce(x)
@@ -58,8 +52,6 @@ def add(root, ngram: List[str], token_to_idx_map: Dict[str, int]) -> None:
             node = node.children[word_id]
         # We did not find it so add a new chlid
         else:
-            #global total_counter
-            #total_counter += 1
             new_node = TrieNode(word_id, len(token_to_idx_map))
             node.children[word_id] = new_node
             # And then point node to the new child
@@ -81,53 +73,33 @@ def find_prefix(root: TrieNode, prefix: List[str], token_to_id_map: Dict[str, in
         try:
             node = node.children[token_to_id_map[word]]
         except KeyError:
-            return None, ([np.log(1/root.max_idx)] * root.max_idx)
+            return None, ([np.log(0)]*root.max_idx)
+            #return None, ([np.log(1/root.max_idx)] * root.max_idx)
     
     return node.outcomes, node.log_distribution
 
 
-def normalize(root: TrieNode, smooth_alpha=-np.inf, eps=0):
-    #print('root')
-    global normalize_count
-    global total_counter
+def normalize(root: TrieNode, smooth_alpha=-np.inf):
     for word, child in root.children.items():
-        normalize_count += 1
-        #print(normalize_count, total_counter)
-
         if child.children[next(iter(child.children))].is_leaf:
-            child.normalize_leaves(smooth_alpha, eps)
+            child.normalize_leaves(smooth_alpha)
         else:
-            normalize(child, smooth_alpha, eps)
+            normalize(child, smooth_alpha)
 
 
-def sample(root: TrieNode, orig_prefix: List[str], token_to_id_map: Dict[str, int]) -> str:
+def sample(root: TrieNode, orig_prefix: List[str], token_to_id_map: Dict[str, int], eps:float, n:int) -> str:
     id_to_token_map = {v: k for k, v in token_to_id_map.items()}
     sentence = []
     prefix = orig_prefix
     cur_word = prefix[-1]
-    eos_probs = []
     while cur_word != "</s>":
-        #print(cur_word)
-        #print(token_to_id_map[cur_word])
-        outcomes, log_probs = find_prefix(root, prefix, token_to_id_map)
-        #if not outcomes:
-        #    print(prefix, cur_word)
-        #print(outcomes, log_probs, cur_word)
-        #if not outcomes:
-        #    prefix = orig_prefix
-        #    cur_word = prefix[-1]
-        #    sentence = []
-        #    eos_probs = []
-        #    continue #hmmmm very unsure this is correct, shouldn't we just return uniform porbabilities?
+        outcomes, log_probs = find_prefix(root, prefix[-n-1:], token_to_id_map)
         log_probs_smoothed = np.log((1-eps) * np.exp(log_probs) + eps * (1/root.max_idx))
-        eos_probs.append(log_probs_smoothed[token_to_id_map["</s>"]])
         sampled_idx = log_multinomial_sample(log_probs_smoothed)
         cur_word = id_to_token_map[sampled_idx]
         sentence.append(cur_word)
         prefix = prefix[1:] + [cur_word]
-
-        #print(' '.join(sentence))
-    return sentence, eos_probs
+    return sentence
 
 
 def log_multinomial_sample(x: np.array) -> int:
@@ -135,7 +107,6 @@ def log_multinomial_sample(x: np.array) -> int:
     x: log-probability distribution (unnormalized is ok) over discrete random variable
     returns the (index of) the sampled word
     """
-    #print(x)
     c = np.logaddexp.accumulate(x) 
     key = np.log(np.random.uniform())+c[-1]
     return bisect(c, key)
@@ -161,7 +132,7 @@ def create_model(sentences: List[str], n: int, dictionary: List[str], token_to_i
             if all(token_to_idx_map.get(w, 3) in words for w in ngram):
                 add(root, ngram, token_to_idx_map)
 
-    normalize(root, smooth_alpha, eps)
+    normalize(root, smooth_alpha)
     return root
 
 
@@ -215,8 +186,6 @@ if __name__ == "__main__":
     parser.add_argument('--smooth_alpha', type=float, default=-1.0, help="Degree of smoothing, -1 will be converted to -np.inf for a sparse model")
     parser.add_argument('--ls_eps', type=float, default=0.0, help="Factor of label smoothing")
 
-    total_counter = 0
-    normalize_count = 0
     args = parser.parse_args()
     sentences = parse_dataset(args.data_path)    
     dictionary = parse_fairseq_vocabulary(args.dict_path)
@@ -234,20 +203,14 @@ if __name__ == "__main__":
     token_to_idx, _ = get_vocabulary_idx_maps(dictionary)
       
     if args.task == 'generate':
-        root = create_model(sentences, n, dictionary, token_to_idx_map=token_to_idx, smooth_alpha=smooth_alpha, eps=eps)
+        root = create_model(sentences, n, dictionary, token_to_idx_map=token_to_idx, smooth_alpha=smooth_alpha)
         print("CREATED MODEL")
         pickle.dump(root, open(args.model_path, "wb"))
         pickle.dump(token_to_idx, open(args.model_path + '.vocab', 'wb'))
     elif args.task == 'sample':
         root = pickle.load(open(args.model_path, "rb"))
-        #token_to_idx = pickle.load(open(args.model_path + '.vocab', 'rb'))
-        #eos_file = open(args.output_path + '.eos_count', 'wb')
-        #eos_list = []
         with open(args.output_path, 'w') as f:
             for i in range(1000):
-                sampled, eos_probs = sample(root, ['<s>']*(n-1), token_to_idx)
-                #eos_list.append(eos_probs)
+                sampled = sample(root, ['<s>']*(n-1), token_to_idx, eps, n)
                 f.write(' '.join(sampled[:-1])+'\n')
 
-        #import pickle
-        #pickle.dump(eos_list, eos_file)
