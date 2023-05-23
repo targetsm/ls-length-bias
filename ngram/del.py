@@ -93,7 +93,7 @@ def sample(root: TrieNode, orig_prefix: List[str], token_to_id_map: Dict[str, in
     prefix = orig_prefix
     cur_word = prefix[-1]
     while cur_word != "</s>":
-        outcomes, log_probs = find_prefix(root, prefix[-n-1:], token_to_id_map)
+        outcomes, log_probs = find_prefix(root, prefix, token_to_id_map)
         log_probs_smoothed = np.log((1-eps) * np.exp(log_probs) + eps * (1/root.max_idx))
         sampled_idx = log_multinomial_sample(log_probs_smoothed)
         cur_word = id_to_token_map[sampled_idx]
@@ -106,10 +106,13 @@ def log_multinomial_sample(x: np.array) -> int:
     """
     x: log-probability distribution (unnormalized is ok) over discrete random variable
     returns the (index of) the sampled word
-    """
-    c = np.logaddexp.accumulate(x) 
-    key = np.log(np.random.uniform())+c[-1]
-    return bisect(c, key)
+    """ 
+    renormalized = lognormalize(x)
+    return np.random.choice(a=list(range(len(x))), p=np.exp(renormalized))
+    
+    #print('c', c)
+    #key = np.log(np.random.uniform())+c[-1]
+    #return bisect(c, key)
 
 
 def get_ngrams(sentence: str, n: int=5) -> List[List[str]]:
