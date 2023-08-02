@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import math
 
 ls_list = ['0', '0.005', '0.01', '0.05', '0.1', '0.5']
-hyp_dict = {'base':[], 'pos_learned':[], 'no_pos':[], 'rel_pos':[]}
-bleu_dict = {'base':[], 'pos_learned':[], 'no_pos':[], 'rel_pos':[]}
-ref_dict = {'base':[], 'pos_learned':[], 'no_pos':[], 'rel_pos':[]}
-se_dict = {'base':[], 'pos_learned':[], 'no_pos':[], 'rel_pos':[]}
-std_dict = {'base':[], 'pos_learned':[], 'no_pos':[], 'rel_pos':[]}
+hyp_dict = {'base':[], 'no_pos':[], 'no_pos_1':[], 'no_pos_2':[]}
+bleu_dict = {'base':[], 'no_pos':[], 'no_pos_1':[], 'no_pos_2':[]}
+ref_dict = {'base':[], 'no_pos':[], 'no_pos_1':[], 'no_pos_2':[]}
+se_dict = {'base':[], 'no_pos':[], 'no_pos_1':[], 'no_pos_2':[]}
+std_dict = {'base':[], 'no_pos':[], 'no_pos_1':[], 'no_pos_2':[]}
 
 for d in hyp_dict.keys():
     for l in ls_list:
@@ -40,9 +40,9 @@ for d in hyp_dict.keys():
 plt.figure(figsize=(12,7))
 plt.errorbar(ls_list, hyp_dict['base'], se_dict['base'], marker='o', label='sinusoid (base)', color='blue', capsize=4)
 plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='reference', color='grey', linestyle='dashed')
-plt.errorbar(ls_list, hyp_dict['pos_learned'], se_dict['pos_learned'], marker='o', label='learned', color='orange', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos'], se_dict['no_pos'], marker='o', label='no_pos', color='green', capsize=4)
-plt.errorbar(ls_list, hyp_dict['rel_pos'], se_dict['rel_pos'], marker='o', label='rel_pos', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos'], se_dict['no_pos'], marker='o', label='no_pos', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_1'], se_dict['no_pos_1'], marker='o', label='no_pos control 1', color='orange', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_2'], se_dict['no_pos_2'], marker='o', label='no_pos control 2', color='green', capsize=4)
 
 
 training_avg = 0
@@ -53,26 +53,26 @@ training_avg /= len(training_file)
 plt.hlines(training_avg, ls_list[0], ls_list[-1], label='training set', color='grey', linestyle='dotted')
 
 plt.grid()
-plt.title('Sampling average sentence length for different positional embeddings (with SE)')
+plt.title('Sampling average sentence length 3 separate nopos models (with SE)')
 plt.ylabel('length')
 plt.xlabel('label smoothing alpha')
 plt.legend()
-plt.savefig('img/pos_sampling.png', dpi=400)
+plt.savefig('img/nopos_sampling.png', dpi=400)
 plt.clf()
 
 plt.figure(figsize=(12,7))
 plt.errorbar(ls_list, hyp_dict['base'], std_dict['base'], marker='o', label='sinusoid (base)', color='blue', capsize=4)
 plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='reference', color='grey', linestyle='dashed')
-plt.errorbar(ls_list, hyp_dict['pos_learned'], std_dict['pos_learned'], marker='o', label='learned', color='orange', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos'], std_dict['no_pos'], marker='o', label='no_pos', color='green', capsize=4)
-plt.errorbar(ls_list, hyp_dict['rel_pos'], std_dict['rel_pos'], marker='o', label='rel_pos', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos'], std_dict['no_pos'], marker='o', label='no_pos', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_1'], std_dict['no_pos_1'], marker='o', label='no_pos control 1', color='orange', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_2'], std_dict['no_pos_2'], marker='o', label='no_pos control 2', color='green', capsize=4)
 plt.hlines(training_avg, ls_list[0], ls_list[-1], label='training set', color='grey', linestyle='dotted')
 
 plt.grid()
-plt.title('Sampling average sentence length for different positional embeddings (with SD)')
+plt.title('Sampling average sentence length of 3 separate nopos models (with SD)')
 plt.ylabel('length')
 plt.xlabel('label smoothing alpha')
 plt.legend()
-plt.savefig('img/pos_sampling_std.png', dpi=400)
+plt.savefig('img/nopos_sampling_std.png', dpi=400)
 plt.clf()
 

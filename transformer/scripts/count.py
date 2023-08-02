@@ -1,7 +1,7 @@
-#ls_list = ['0', '0.005', '0.01', '0.05', '0.1', '0.5']
-ls_list = ['0.5']
+ls_list = ['0', '0.005', '0.01', '0.05', '0.1', '0.5']
+#ls_list = ['0']
 #hyp_dict = {'base':[], '4k':[], '64k':[]}
-hyp_dict = {'no_pos':[]}
+hyp_dict = {'rel_pos':[]}
 
 for d in hyp_dict.keys():
     for l in ls_list:
@@ -11,13 +11,15 @@ for d in hyp_dict.keys():
         line_out = []
         i = 0
         for line in f:
+            if line[0] == '2':
+                continue
             if line[0] == 'S':
                 line_out.append(len(line.split()[1:]))
             elif line[0] == 'T':
                 line_out.append(len(line.split()[1:]))
             elif line[0] == 'H':
                 line_out.append(len(line.split()[2:]))
-            if i == 3001:
+            if i == 1501:
                 f_out.write(str(line_out) + '\n')
                 line_out = []
                 i = 0
