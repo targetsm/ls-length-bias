@@ -1,5 +1,5 @@
 ls_list = ['0', '0.005', '0.01', '0.05', '0.1', '0.5']
-#ls_list = ['0']
+#ls_list = ['0.1', '0.05', '0.5']
 #hyp_dict = {'base':[], '4k':[], '64k':[]}
 hyp_dict = {'rel_pos':[]}
 
@@ -11,6 +11,12 @@ for d in hyp_dict.keys():
         line_out = []
         i = 0
         for line in f:
+            if i == 3001:
+                #print(line)
+                f_out.write(str(line_out) + '\n')
+                line_out = []
+                i = 0
+                continue
             if line[0] == '2':
                 continue
             if line[0] == 'S':
@@ -19,10 +25,5 @@ for d in hyp_dict.keys():
                 line_out.append(len(line.split()[1:]))
             elif line[0] == 'H':
                 line_out.append(len(line.split()[2:]))
-            if i == 1501:
-                f_out.write(str(line_out) + '\n')
-                line_out = []
-                i = 0
-                continue
             i += 1 
             
