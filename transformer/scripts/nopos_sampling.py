@@ -29,7 +29,7 @@ for d in hyp_dict.keys():
             ref_len += ls[1]
             hyp_sum = sum(ls[2:])
             hyp_len += hyp_sum/length
-            hyp_se += math.sqrt(sum([(x - hyp_sum/length)**2 for x in ls[2:]])/length)/math.sqrt(length)
+            hyp_se += math.sqrt(sum([(x - hyp_sum/length)**2 for x in ls[2:]])/length)/math.sqrt(length) * 2.576
             hyp_std += math.sqrt(sum([(x - hyp_sum/length)**2 for x in ls[2:]])/length)
             total_count += 1
         hyp_dict[d].append(hyp_len/total_count)
@@ -37,12 +37,13 @@ for d in hyp_dict.keys():
         std_dict[d].append(hyp_std / total_count)
         ref_dict[d].append(ref_len / total_count)
         print(hyp_dict[d], se_dict[d], ref_dict[d])
-plt.figure(figsize=(12,7))
-plt.errorbar(ls_list, hyp_dict['base'], se_dict['base'], marker='o', label='sinusoid (base)', color='blue', capsize=4)
-plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='reference', color='grey', linestyle='dashed')
-plt.errorbar(ls_list, hyp_dict['no_pos'], se_dict['no_pos'], marker='o', label='no_pos', color='red', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos_1'], se_dict['no_pos_1'], marker='o', label='no_pos control 1', color='orange', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos_2'], se_dict['no_pos_2'], marker='o', label='no_pos control 2', color='green', capsize=4)
+plt.rcParams.update({'figure.autolayout': True})
+plt.figure(figsize=(3.9*1.2,1.7*1.2))
+plt.errorbar(ls_list, hyp_dict['base'], se_dict['base'], marker='o', label='sinusoid', color='blue', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos'], se_dict['no_pos'], marker='o', label='none', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_1'], se_dict['no_pos_1'], marker='o', label='control 1', color='orange', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_2'], se_dict['no_pos_2'], marker='o', label='control 2', color='green', capsize=4)
+plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='test', color='grey', linestyle='dashed')
 
 
 training_avg = 0
@@ -50,29 +51,31 @@ training_file = open('../data/iwslt17.de-en.bpe16k/train.bpe.de-en.en').readline
 for line in training_file:
     training_avg += len(line.split())
 training_avg /= len(training_file)
-plt.hlines(training_avg, ls_list[0], ls_list[-1], label='training set', color='grey', linestyle='dotted')
+plt.hlines(training_avg, ls_list[0], ls_list[-1], label='train', color='grey', linestyle='dotted')
 
 plt.grid()
-plt.title('Sampling average sentence length 3 separate nopos models (with SE)')
+#plt.title('Sampling mean sentence length of 3 separate models without positional embeddings (with SE)')
 plt.ylabel('length')
-plt.xlabel('label smoothing alpha')
-plt.legend()
-plt.savefig('img/nopos_sampling.png', dpi=400)
+plt.xlabel('label smoothing $\\lambda$')
+plt.legend(bbox_to_anchor=(1.05, 1),
+                         loc='upper left', borderaxespad=0.)
+plt.savefig('img/nopos_sampling.pdf', dpi=400)
 plt.clf()
 
-plt.figure(figsize=(12,7))
-plt.errorbar(ls_list, hyp_dict['base'], std_dict['base'], marker='o', label='sinusoid (base)', color='blue', capsize=4)
-plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='reference', color='grey', linestyle='dashed')
-plt.errorbar(ls_list, hyp_dict['no_pos'], std_dict['no_pos'], marker='o', label='no_pos', color='red', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos_1'], std_dict['no_pos_1'], marker='o', label='no_pos control 1', color='orange', capsize=4)
-plt.errorbar(ls_list, hyp_dict['no_pos_2'], std_dict['no_pos_2'], marker='o', label='no_pos control 2', color='green', capsize=4)
-plt.hlines(training_avg, ls_list[0], ls_list[-1], label='training set', color='grey', linestyle='dotted')
+plt.figure(figsize=(3.9*1.2,1.7*1.2))
+plt.errorbar(ls_list, hyp_dict['base'], std_dict['base'], marker='o', label='sinusoid', color='blue', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos'], std_dict['no_pos'], marker='o', label='none', color='red', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_1'], std_dict['no_pos_1'], marker='o', label='control 1', color='orange', capsize=4)
+plt.errorbar(ls_list, hyp_dict['no_pos_2'], std_dict['no_pos_2'], marker='o', label='control 2', color='green', capsize=4)
+plt.hlines(ref_dict['base'][0], ls_list[0], ls_list[-1], label='test', color='grey', linestyle='dashed')
+plt.hlines(training_avg, ls_list[0], ls_list[-1], label='train', color='grey', linestyle='dotted')
 
 plt.grid()
-plt.title('Sampling average sentence length of 3 separate nopos models (with SD)')
+#plt.title('Sampling mean sentence length of 3 separate models without positional embeddings (with SD)')
 plt.ylabel('length')
-plt.xlabel('label smoothing alpha')
-plt.legend()
-plt.savefig('img/nopos_sampling_std.png', dpi=400)
+plt.xlabel('label smoothing $\\lambda$')
+plt.legend(bbox_to_anchor=(1.05, 1),
+                         loc='upper left', borderaxespad=0.)
+plt.savefig('img/nopos_sampling_std.pdf', dpi=400)
 plt.clf()
 
