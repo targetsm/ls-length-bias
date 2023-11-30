@@ -6,13 +6,13 @@ Hyper-parameters partly taken from [transformers without tears](https://github.c
 
 ## Data & Preprocessing
 
-The data can be downloaded from https://wit3.fbk.eu/2017-01-c
+The data can be downloaded from https://wit3.fbk.eu/2017-01-c.
 
 As in the paper, we apply a copy filter before bpe to remove sentences that have a overlap of over 50% between source and target. [Ott et al., 2018](https://github.com/darcey/transformers_without_tears)
 
 ## How to run the experiment:
 
 1. Clone [Fairseq](https://github.com/facebookresearch/fairseq) and replace `fairseq/scripts/spm_encode.py` with `baseline_riley/scripts/spm_encode.py`.
-2. Prepare the dataset using `bash prepare-iwslt17.sh`
-3. Start training with `bash train.sh`
+2. Prepare the dataset using `scripts/prepare-iwslt17.sh`
+3. Start training with `scripts/train.sh`
 4. You can plot the results with the python scripts found in [img](img).
