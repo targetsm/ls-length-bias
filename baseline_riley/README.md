@@ -2,6 +2,8 @@
 
 How to run the experiment (on Euler):
 
+Replace `fairseq/scripts/spm_encode.py` with `baseline_riley/scripts/spm_encode.py`.
+
 ```
 bash prepare-iwslt17.sh
 sbatch -o train.log --gpus=1 --mem-per-cpu=8000 --time=12:00:00 train.sh
