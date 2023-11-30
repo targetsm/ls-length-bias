@@ -12,7 +12,7 @@ As in the paper, we apply a copy filter before bpe to remove sentences that have
 
 ## How to run the experiment:
 
-1. Clone (Fairseq)[https://github.com/facebookresearch/fairseq] and replace `fairseq/scripts/spm_encode.py` with `baseline_riley/scripts/spm_encode.py`.
+1. Clone [Fairseq](https://github.com/facebookresearch/fairseq) and replace `fairseq/scripts/spm_encode.py` with `baseline_riley/scripts/spm_encode.py`.
 2. Prepare the dataset using `bash prepare-iwslt17.sh`
 3. Start training with `bash train.sh`
-4. You can plot the results with the python scripts found in (img)[img].
+4. You can plot the results with the python scripts found in [test](img) 
