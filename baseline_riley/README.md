@@ -8,7 +8,7 @@ Hyper-parameters partly taken from [transformers without tears](https://github.c
 
 The data can be downloaded from https://wit3.fbk.eu/2017-01-c.
 
-As in the paper, we apply a copy filter before bpe to remove sentences that have a overlap of over 50% between source and target. [Ott et al., 2018](https://github.com/darcey/transformers_without_tears)
+As in the paper, we apply a copy filter before bpe to remove sentences that have a overlap of over 50% between source and target [Ott et al., 2018](https://github.com/darcey/transformers_without_tears).
 
 ## How to run the experiment:
 
