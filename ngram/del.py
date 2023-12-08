@@ -213,7 +213,7 @@ if __name__ == "__main__":
     elif args.task == 'sample':
         root = pickle.load(open(args.model_path, "rb"))
         with open(args.output_path, 'w') as f:
-            for i in range(1000):
+            for i in range(100000):
                 sampled = sample(root, ['<s>']*(n-1), token_to_idx, eps, n)
                 f.write(' '.join(sampled[:-1])+'\n')
 
