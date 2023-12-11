@@ -2,9 +2,9 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dict_size', type=int, default=10)
+parser.add_argument('--dict_size', type=int, default=8)
 parser.add_argument('--sent_len', type=int, default=10)
-parser.add_argument('--corpus_size', type=int, default=1000)
+parser.add_argument('--corpus_size', type=int, default=10000)
 
 args = parser.parse_args()
 
