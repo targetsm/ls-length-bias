@@ -31,6 +31,12 @@ The results are shown in [Baseline Riley & Chiang.pdf](Baseline%20Riley%20%26%20
 
 We run experiments with ngrams, estimating ngrams on artificial and real data.
 We further interpolate the estimated distribution with the uniform distribution using the label smoothing $\lambda$.
+Code for fitting, sampling and plotting can be found under [ngram](ngram).
+The results of our experiments are shown in [Ngram experiments](Ngram%20experiments.pdf).
 
 ## Transformer experiments
-Finally we recreated 
+
+We train transformers with different configurations and varying label smoothing parameter.
+Code for training, sampling and plotting can be found under [transformer](transformer).
+The results of our experiments are shown in [Transformer experiments](Transformer%20experiments.pdf).
+
