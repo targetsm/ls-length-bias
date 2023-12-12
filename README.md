@@ -4,7 +4,9 @@ Repository for my semester project: Understanding the Effects of Label Smoothing
 
 ## Setup
 
-We train transformer models using the [Fairseq](https://github.com/facebookresearch/fairseq) toolkit.
+### Requirements
+- [Fairseq](https://github.com/facebookresearch/fairseq) toolkit v0.12.3
+- [sacreBLEU](https://github.com/mjpost/sacrebleu)
 
 ### Data
 For most experiments we use the German to English IWSLT 2017 TED task dataset (Cettolo et al., 2012).
@@ -29,8 +31,15 @@ The results are shown in [Baseline Riley & Chiang.pdf](Baseline%20Riley%20%26%20
 
 ## Ngram experiments
 
-We run experiments with ngrams, estimating ngrams on artificial and real data.
-We further interpolate the estimated distribution with the uniform distribution using the label smoothing $\lambda$.
+We run experiments on label smoothing applied to ngrams using artificial and real data.
+To apply label smoothing to the ngram model we interpolate the estimated distribution with the uniform distribution using the label smoothing $\lambda$.
+
+### Experiments on real data
+`python -u del.py -n 3 --task sample --dict_path data-bin/iwslt17.de-en.bpe16k/dict.txt --data_path iwslt17.de-en.bpe16k/test.bpe.de-en.en --model_path /cluster/scratch/ggabriel/ngram/model_3gram_16k --ls_eps $i --output_path sample_3gram_16k_norep/ls_$i.txt
+
+### Experiments on artificial data
+
+
 Code for fitting, sampling and plotting can be found under [ngram](ngram).
 The results of our experiments are shown in [Ngram experiments](Ngram%20experiments.pdf).
 
@@ -39,4 +48,7 @@ The results of our experiments are shown in [Ngram experiments](Ngram%20experime
 We train transformers with different configurations and varying label smoothing parameter.
 Code for training, sampling and plotting can be found under [transformer](transformer).
 The results of our experiments are shown in [Transformer experiments](Transformer%20experiments.pdf).
+
+### Relative positional embeddings
+Fairseq v0.10.2
 
