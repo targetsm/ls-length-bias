@@ -1,6 +1,6 @@
 # 📏 ls-length-bias
 
-Repository for my semester project: Understanding the Effects of Label Smoothing on Length Biases in Machine Translation
+Repository for the Project: Understanding the Effects of Label Smoothing on Length Biases in Machine Translation
 
 ## Setup
 
@@ -27,12 +27,18 @@ The results are shown in [Baseline Riley & Chiang.pdf](Baseline%20Riley%20%26%20
 1. Clone [Fairseq](https://github.com/facebookresearch/fairseq) and replace `fairseq/scripts/spm_encode.py` with `baseline_riley/scripts/spm_encode.py`.
 2. Prepare the dataset using `baseline_riley/scripts/prepare-iwslt17.sh`
 3. Start training with `baseline_riley/scripts/train.sh`
-4. Sample from the trained model:
+4. Generate BLEU scores:
 ```
 fairseq-generate $DIR/data-bin/iwslt17.de-en.bpe16k  --path $DIR/checkpoints/transformer_nols/checkpoint_best.pt \
       --unnormalized --max-len-b 300 --batch-size 128 --beam 1 --remove-bpe --sacrebleu --results-path evaluation/beams/1 --num-workers 2
 ```
-5. You can plot the results with the python scripts found in [baseline_riley/img](baseline_riley/img).
+5. Sample from the model:
+```
+fairseq-generate $DIR/data-bin/iwslt17.de-en.bpe16k  --path $DIR/checkpoints/transformer_nols/checkpoint_best.pt \
+        --unnormalized --max-len-b 300 --batch-size 1 --beam 1000 --nbest 1000 --sampling --remove-bpe \
+	--sacrebleu --results-path evaluation/sampling/nols --num-workers 2
+```
+6. You can plot the results with the python scripts found in [baseline_riley/img](baseline_riley/img).
 
 ## Ngram experiments
 
@@ -40,7 +46,7 @@ We run experiments on label smoothing applied to ngrams using artificial and rea
 To apply label smoothing to the ngram model we interpolate the estimated distribution with the uniform distribution using the label smoothing $\lambda$.
 The results of our experiments are shown in [Ngram experiments](Ngram%20experiments.pdf).
 
-Code for model generation and sampling can be found in [ngram/del.py](ngram/del.py). The script is based on an implementation of ngrams by Clara Meister and Luca Malagutti.
+Code for model generation and sampling can be found in [ngram/del.py](ngram/del.py).
 To generate a model run:
 ```
 python -u del.py -n 3 --task generate --dict_path data-bin/iwslt17.de-en.bpe16k/dict.txt --data_path iwslt17.de-en.bpe16k/test.bpe.de-en.en --model_path /cluster/scratch/ggabriel/ngram/model_3gram_16k --ls_eps 0.1
@@ -75,10 +81,9 @@ fairseq-generate $DIR/data-bin/iwslt17.de-en.bpe16k  --path $DIR/ls_$i/checkpoin
 ```
 ### Positional embedding experiments
 
-To train models without positional embedding information use the scripts found in [transformer/no_pos_1](transformer/no_pos_1)
+To train models without positional embedding information use the scripts found in [transformer/no_pos_1](transformer/no_pos_1).
 
 We run experiments with a relative positional embedding appraoch based on [ALIBI](https://github.com/ofirpress/attention_with_linear_biases).
-The implementation is based on .. from Florian SChottmann
 Requirements:
 - Fairseq v0.10.2
 - sacreBLEU 1.5.1
