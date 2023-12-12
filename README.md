@@ -34,11 +34,19 @@ The results are shown in [Baseline Riley & Chiang.pdf](Baseline%20Riley%20%26%20
 We run experiments on label smoothing applied to ngrams using artificial and real data.
 To apply label smoothing to the ngram model we interpolate the estimated distribution with the uniform distribution using the label smoothing $\lambda$.
 
-### Experiments on real data
-`python -u del.py -n 3 --task sample --dict_path data-bin/iwslt17.de-en.bpe16k/dict.txt --data_path iwslt17.de-en.bpe16k/test.bpe.de-en.en --model_path /cluster/scratch/ggabriel/ngram/model_3gram_16k --ls_eps $i --output_path sample_3gram_16k_norep/ls_$i.txt
+Code for model generation and sampling can be found in [ngram/del.py](ngram/del.py).
+To generate a model run:
+```
+python -u del.py -n 3 --task generate --dict_path data-bin/iwslt17.de-en.bpe16k/dict.txt --data_path iwslt17.de-en.bpe16k/test.bpe.de-en.en --model_path /cluster/scratch/ggabriel/ngram/model_3gram_16k --ls_eps 0.1
+```
+To sample from the generated model, run:
+```
+python -u del.py -n 3 --task sample --dict_path data-bin/iwslt17.de-en.bpe16k/dict.txt --data_path iwslt17.de-en.bpe16k/test.bpe.de-en.en --model_path /cluster/scratch/ggabriel/ngram/model_3gram_16k --ls_eps 0.1 --output_path sample_3gram_16k_norep/ls_0.1.txt
+```
 
-### Experiments on artificial data
+### Real Data
 
+For data preparation 
 
 Code for fitting, sampling and plotting can be found under [ngram](ngram).
 The results of our experiments are shown in [Ngram experiments](Ngram%20experiments.pdf).
